@@ -1,23 +1,27 @@
 import { Box, TextField, Typography } from '@mui/material';
-import { useState, type ChangeEventHandler, type FC } from 'react';
+import { useState, useTransition, type ChangeEventHandler, type FC } from 'react';
 
 export const UseTransition: FC = () => {
     const [value, setValue] = useState('');
     const [users, setUsers] = useState<{ id: number; name: string }[]>([]);
 
+    const [isPending, startTransition] = useTransition();
+
     const changeHandler: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement> = (e) => {
         const value = e.target.value;
         setValue(value);
 
-        const newUsers: typeof users = [];
-        for (let index = 0; index < 2e4; index++) {
-            newUsers.push({
-                id: index,
-                name: value,
-            });
-        }
+        startTransition(() => {
+            const newUsers: typeof users = [];
+            for (let index = 0; index < 2e4; index++) {
+                newUsers.push({
+                    id: index,
+                    name: value,
+                });
+            }
 
-        setUsers(newUsers);
+            setUsers(newUsers);
+        });
     };
 
     return (
@@ -40,11 +44,13 @@ export const UseTransition: FC = () => {
                 Users:
             </Typography>
             <Box sx={{ display: 'flex', flexFlow: 'column', alignItems: 'center' }}>
-                {users.map(({ id, name }) => (
-                    <div key={id}>
-                        {id}. {name}
-                    </div>
-                ))}
+                {isPending
+                    ? 'Loading...'
+                    : users.map(({ id, name }) => (
+                          <div key={id}>
+                              {id}. {name}
+                          </div>
+                      ))}
             </Box>
         </>
     );

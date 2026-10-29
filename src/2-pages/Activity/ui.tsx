@@ -1,21 +1,12 @@
 import { Box, CircularProgress, Tab, Tabs, TextField, Typography } from '@mui/material';
-import {
-    Activity,
-    Suspense,
-    use,
-    useEffect,
-    useState,
-    type FC,
-    type PropsWithChildren,
-    type SyntheticEvent,
-} from 'react';
-import { useConsistentPromiseCb } from '6-shared/lib/useUse';
+import { Activity, Suspense, useEffect, useState, type FC, type PropsWithChildren, type SyntheticEvent } from 'react';
+import { useConsistentPromiseCb } from '6-shared/lib/useConsistentPromiseCb';
 
 export const ActivityPage: FC = () => {
-    const [tab, setTba] = useState('one');
+    const [tab, setTab] = useState('one');
 
     const handleChange = (_event: SyntheticEvent, newValue: string) => {
-        setTba(newValue);
+        setTab(newValue);
     };
 
     return (
@@ -36,15 +27,23 @@ export const ActivityPage: FC = () => {
                 <Tab value="one" label="Обычный компонент" />
                 <Tab value="two" label="Activity" />
             </Tabs>
+            <Suspense fallback={<CircularProgress />}>
+                {tab === 'one' && <div>First Tab Content</div>}
 
-            {tab === 'one' && <div>First Tab Content</div>}
-            {tab === 'two' && <TabContent index={2} />}
+                <Activity mode={tab === 'two' ? 'visible' : 'hidden'}>
+                    <TabContent index={2} />
+                </Activity>
+            </Suspense>
         </>
     );
 };
 
 export const TabContent: FC<PropsWithChildren<{ index: number }>> = ({ index }) => {
     const [value, setValue] = useState('');
+
+    const data = useConsistentPromiseCb('user1', () =>
+        fetch('https://jsonplaceholder.typicode.com/users/1').then((r) => r.json()),
+    );
 
     useEffect(() => {
         console.log(`${index} render`);
@@ -62,6 +61,7 @@ export const TabContent: FC<PropsWithChildren<{ index: number }>> = ({ index }) 
                 label="FIO"
                 variant="outlined"
             />
+            <pre>{JSON.stringify(data, undefined, 2)}</pre>
         </Box>
     );
 };

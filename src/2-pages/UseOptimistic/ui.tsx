@@ -1,8 +1,12 @@
 import { Box, Button, TextField, Typography } from '@mui/material';
-import { useState, type ChangeEventHandler, type FC } from 'react';
+import { useOptimistic, useState, useTransition, type ChangeEventHandler, type FC } from 'react';
 import { wait } from '6-shared/lib/wait';
 
 type User = { id: number; name: string };
+
+type OptimisticUser = User & {
+    isOptimistic?: boolean;
+};
 
 export const UseOptimistic: FC = () => {
     const [value, setValue] = useState('');
@@ -17,23 +21,42 @@ export const UseOptimistic: FC = () => {
         },
     ]);
 
+    const [isPending, startTransition] = useTransition();
+
+    const [optimisticUsers, setOptimisticUser] = useOptimistic<OptimisticUser[], OptimisticUser>(
+        users,
+        (state, newOptimisticUser) => [...state, newOptimisticUser],
+    );
+
+    console.log({ users, optimisticUsers });
+
     const changeHandler: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement> = (e) => {
         setValue(e.target.value);
     };
 
-    const clickHandler = async () => {
-        const newUser = {
+    const clickHandler = () => {
+        const newUser: User = {
             id: Date.now(),
             name: value,
         };
 
-        await wait(2e3);
+        startTransition(async () => {
+            try {
+                setOptimisticUser({ ...newUser, isOptimistic: true });
 
-        setUsers((prev) => {
-            return [...prev, newUser];
+                await wait(2e3);
+
+                startTransition(() => {
+                    setUsers((prev) => {
+                        return [...prev, newUser];
+                    });
+
+                    setValue('');
+                });
+            } catch (error) {
+                console.log(error);
+            }
         });
-
-        setValue('');
     };
 
     return (
@@ -53,7 +76,7 @@ export const UseOptimistic: FC = () => {
                     variant="outlined"
                 />
 
-                <Button onClick={clickHandler} variant="contained">
+                <Button loading={isPending} onClick={clickHandler} variant="contained">
                     Add
                 </Button>
             </Box>
@@ -61,8 +84,8 @@ export const UseOptimistic: FC = () => {
                 Users:
             </Typography>
             <Box sx={{ display: 'flex', flexFlow: 'column', alignItems: 'center' }}>
-                {users.map(({ id, name }, index) => (
-                    <Box key={id}>
+                {optimisticUsers.map(({ id, name, isOptimistic }, index) => (
+                    <Box key={id} sx={{ opacity: isOptimistic ? 0.5 : 1 }}>
                         {index + 1}. {name}
                     </Box>
                 ))}
