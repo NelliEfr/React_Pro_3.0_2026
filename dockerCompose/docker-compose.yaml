@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  webDev:
+    image: my-react:0.0.3
+    ports:
+      - 4000:80
+    environment:
+      - VITE_APP_API=https://dev
+      - VITE_APP_TITLE="DEV TITLE"
+  
+  webTest:
+    image: my-react:0.0.3
+    ports:
+      - 4001:80
+    environment:
+      - VITE_APP_API=https://test
+      - VITE_APP_TITLE="Test TITLE"
+    
+  webProd:
+    image: my-react:0.0.3
+    ports:
+      - 4002:80
+    environment:
+      - VITE_APP_API=https://prod
+      - VITE_APP_TITLE="Prod TITLE"
+    
